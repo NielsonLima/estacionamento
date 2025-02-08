@@ -1,0 +1,91 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+.container {
+    width: 90%;
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+h1 {
+    text-align: center;
+    color: #2c3e50;
+}
+form {
+    display: flex;
+    flex-direction: column;
+}
+label {
+    margin-top: 1rem;
+    font-weight: bold;
+}
+input[type="time"] {
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+}
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0.5rem 0;
+}
+input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+button {
+    margin-top: 1.5rem;
+    padding: 0.7rem;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+button:hover {
+    background-color: #2980b9;
+}
+#result {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #e8f4fd;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+}
+.error {
+    color: #e74c3c;
+    margin-top: 0.5rem;
+}
+.info {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-top: 0.5rem;
+    text-align: center;
+}
+.user-type-container {
+    margin-top: 1rem;
+    text-align: center;
+}
+.user-type-label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
