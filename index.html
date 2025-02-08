@@ -1,0 +1,221 @@
+<html>
+    <head>
+    <base href="https://parkingsim.example.com/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>EstacionaFácil - Cálculo de Tarifa para Carros e Motos</title><style>
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        color: #333;
+    }
+    .container {
+        width: 90%;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+        text-align: center;
+        color: #2c3e50;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+    label {
+        margin-top: 1rem;
+        font-weight: bold;
+    }
+    input[type="time"] {
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 1rem;
+    }
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        margin: 0.5rem 0;
+    }
+    input[type="checkbox"] {
+        margin-right: 0.5rem;
+    }
+    button {
+        margin-top: 1.5rem;
+        padding: 0.7rem;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    button:hover {
+        background-color: #2980b9;
+    }
+    #result {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: #e8f4fd;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .error {
+        color: #e74c3c;
+        margin-top: 0.5rem;
+    }
+    .info {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+    .user-type-container {
+        margin-top: 1rem;
+        text-align: center;
+    }
+    .user-type-label {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>Estacionamento</h1>
+        <p class="info">Tolerância de 15 minutos aplicada automaticamente</p>
+        <form id="parkingForm">
+            <label for="entryTime">Hora de Entrada:</label>
+            <input type="time" id="entryTime" required>
+            
+            <label for="exitTime">Hora de Saída:</label>
+            <input type="time" id="exitTime" required>
+            
+            <div class="user-type-container">
+                <div class="user-type-label">Tipo de Usuário:</div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="comerciario" checked>
+                        Comerciário
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="usuarioComum">
+                        Usuário Comum
+                    </label>
+                </div>
+            </div>
+            
+            <div class="user-type-container">
+                <div class="user-type-label">Tipo de Veículo:</div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="carro" checked>
+                        Carro
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="moto">
+                        Moto
+                    </label>
+                </div>
+            </div>
+            
+            <button type="submit">Calcular Tarifa</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const comerciarioCheckbox = document.getElementById('comerciario');
+        const usuarioComumCheckbox = document.getElementById('usuarioComum');
+        const carroCheckbox = document.getElementById('carro');
+        const motoCheckbox = document.getElementById('moto');
+
+        comerciarioCheckbox.addEventListener('change', function() {
+            usuarioComumCheckbox.checked = !this.checked;
+        });
+
+        usuarioComumCheckbox.addEventListener('change', function() {
+            comerciarioCheckbox.checked = !this.checked;
+        });
+
+        carroCheckbox.addEventListener('change', function() {
+            motoCheckbox.checked = !this.checked;
+        });
+
+        motoCheckbox.addEventListener('change', function() {
+            carroCheckbox.checked = !this.checked;
+        });
+
+        document.getElementById('parkingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const entryTime = document.getElementById('entryTime').value;
+            const exitTime = document.getElementById('exitTime').value;
+            const userType = comerciarioCheckbox.checked ? 'comerciario' : 'usuario';
+            const vehicleType = carroCheckbox.checked ? 'car' : 'moto';
+            
+            if (!entryTime || !exitTime) {
+                showError('Por favor, preencha todos os campos corretamente.');
+                return;
+            }
+            
+            const entry = new Date(`2000-01-01T${entryTime}`);
+            const exit = new Date(`2000-01-01T${exitTime}`);
+            
+            if (exit <= entry) {
+                exit.setDate(exit.getDate() + 1);
+            }
+            
+            const durationMs = exit - entry;
+            let durationMinutes = Math.floor(durationMs / (1000 * 60));
+            
+            // Aplicar tolerância de 15 minutos
+            durationMinutes = Math.max(0, durationMinutes - 15);
+            
+            const durationHours = Math.ceil(durationMinutes / 60);
+            
+            let totalCost = 0;
+            if (durationHours > 0) {
+                if (userType === 'comerciario') {
+                    totalCost = 2 + (durationHours - 1) * 2;
+                } else {
+                    totalCost = 4 + (durationHours - 1) * 3;
+                }
+            }
+
+            // Aplicar desconto para motos
+            if (vehicleType === 'moto') {
+                totalCost /= 2;
+            }
+            
+            const resultElement = document.getElementById('result');
+            resultElement.innerHTML = `
+                Tipo de Usuário: ${userType === 'comerciario' ? 'Comerciário' : 'Usuário Comum'}<br>
+                Veículo: ${vehicleType === 'moto' ? 'Moto' : 'Carro'}<br>
+                Duração: ${durationMinutes} minuto(s)<br>
+                Horas cobradas: ${durationHours}<br>
+                Valor Total: R$ ${totalCost.toFixed(2)}
+            `;
+        });
+
+        function showError(message) {
+            const resultElement = document.getElementById('result');
+            resultElement.innerHTML = `<p class="error">${message}</p>`;
+        }
+    </script>
+</body></html>
