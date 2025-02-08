@@ -1,4 +1,4 @@
-# estac# Documentação do Projeto EstacionaFácil
+# Documentação do Projeto EstacionaFácil
 
 ## Introdução
 O **EstacionaFácil** é um sistema web para cálculo de tarifas de estacionamento para carros e motos, aplicando regras diferenciadas para comerciários e usuários comuns. O sistema considera uma tolerância de 15 minutos e aplica descontos conforme o tipo de veículo.
