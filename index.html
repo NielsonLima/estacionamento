@@ -3,15 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
   <title>Sistema de Estacionamento</title>
-  <style>
-    
-  </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Sistema de Estacionamento (visual)</h1>
+    <h1>Sistema de Estacionamento</h1>
     <div class="controls">
       <label class="small">Vagas:</label>
       <input id="numSpots" type="number" value="20" min="1" style="width:80px;padding:6px;border-radius:6px;border:1px solid #ccc">
@@ -22,7 +19,7 @@
 
   <main>
     <div class="grid" id="grid"></div>
-    <footer>Legenda: Cinza = livre · Vermelho = ocupado · Verde = pago (permanece verde até liberar ou até expirar tolerância de 15 min)</footer>
+    <footer>Legenda: Cinza = livre · Vermelho = ocupado · Verde = pago (tolerância de 15min após pagamento)</footer>
   </main>
 
   <!-- modal -->
@@ -30,48 +27,66 @@
     <div class="modal" role="dialog" aria-modal="true">
       <h2 id="modalTitle">Vaga</h2>
       <div id="modalBody">
-        <div class="row-full">
-          <label>Nome</label>
-          <input id="name" type="text">
+        <div class="vehicle-info">
+          <div>Proprietário: <span id="ownerNameDisplay">-</span></div>
+          <div>Veículo: <span id="vehicleTypeDisplay">-</span></div>
         </div>
+        
+        <div class="form-row">
+            <div style="flex:1">
+                <label>Nome do Proprietário</label>
+                <input id="name" type="text">
+            </div>
+        </div>
+        
         <div class="form-row">
           <div style="flex:1">
-            <label>Placa</label>
-            <input id="plate" type="text">
+            <label>Nome do Veículo:</label>
+            <input id="vehicleName" type="text">
           </div>
           <div style="flex:1">
-            <label>Cor</label>
-            <input id="color" type="text">
+            <label>Placa:</label>
+            <input id="plate" type="text">
           </div>
         </div>
 
         <div class="form-row">
           <div style="flex:1">
+            <label>Cor</label>
+            <input id="color" type="text">
+          </div>
+          <div style="flex:1">
             <label>Entrada</label>
             <input id="entryTime" type="datetime-local">
           </div>
+        </div>
+
+        <div class="form-row">
           <div style="flex:1">
             <label>Saída</label>
             <input id="exitTime" type="datetime-local">
           </div>
         </div>
 
-        <div class="form-row">
-          <div>
-            <label>Cliente</label>
+        <div class="client-vehicle-container">
+          <div class="client-vehicle-box">
+            <h3>Tipo de Cliente</h3>
             <div class="radio-group">
-              <label><input type="radio" name="clientType" value="comerciario"> Comerciário</label>
+              <label><input type="radio" name="clientType" value="comerciario" checked> Comerciário</label>
               <label><input type="radio" name="clientType" value="usuario"> Usuário</label>
             </div>
           </div>
-          <div>
-            <label>Veículo</label>
+          
+          <div class="client-vehicle-box">
+            <h3>Tipo de Veículo</h3>
             <div class="radio-group">
-              <label><input type="radio" name="vehicleType" value="carro"> Carro</label>
+              <label><input type="radio" name="vehicleType" value="carro" checked> Carro</label>
               <label><input type="radio" name="vehicleType" value="moto"> Moto</label>
             </div>
           </div>
         </div>
+
+        <div class="time-info" id="timeInfo"></div>
 
         <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
           <button id="setExitNow" class="ghost small">Marcar saída agora</button>
@@ -91,347 +106,35 @@
     </div>
   </div>
 
-<script>
-// ======= Configurações e tarifas =======
-const RATES = {
-  carro: {
-    comerciario: {first:2, additional:2, daily:15},
-    usuario: {first:4, additional:3, daily:25}
-  },
-  moto: {
-    comerciario: {first:2, additional:1, daily:10},
-    usuario: {first:3, additional:2, daily:15}
-  }
-};
-const TOLERANCE_MIN = 15; // minutos de tolerância
-const DIARY_THRESHOLD_HOURS = 9; // horas para tarifar como diarista
-const PAID_GRACE_MIN = 15; // após pagar, tem 15 minutos de graça para sair (fica verde)
 
-// ======= Estado =======
-let TOTAL_SPOTS = parseInt(document.getElementById('numSpots').value,10) || 20;
-let spots = loadSpots(TOTAL_SPOTS);
-let currentIndex = null; // vaga aberta no modal
-let checkInterval = null;
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// ======= Inicialização =======
-renderGrid();
-startPeriodicChecks();
-
-// ======= Load / Save =======
-function loadSpots(n){
-  try{
-    const saved = JSON.parse(localStorage.getItem('estacionamento_spots')) || [];
-    if(saved.length === n) return saved;
-    // if different size, create new array but keep the first saved entries
-    const arr = Array.from({length:n},(_,i)=> saved[i] || null);
-    return arr;
-  }catch(e){
-    return Array.from({length:n},()=>null);
-  }
-}
-function saveSpots(){
-  localStorage.setItem('estacionamento_spots', JSON.stringify(spots));
-}
-
-// ======= Grid =======
-function renderGrid(){
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  for(let i=0;i<TOTAL_SPOTS;i++){
-    const div = document.createElement('div');
-    div.className = 'slot ' + (spots[i] ? (spots[i].paid ? 'paid' : 'occupied') : 'free');
-    div.dataset.index = i;
-    div.innerHTML = `<div class="num">Vaga ${i+1}</div>` + (spots[i] ? `<div class="meta">${spots[i].plate || ''}</div>` : '');
-    div.addEventListener('click',()=> openModal(i));
-    grid.appendChild(div);
-  }
-}
-
-// ======= Modal =======
-const overlay = document.getElementById('overlay');
-const nameInput = document.getElementById('name');
-const plateInput = document.getElementById('plate');
-const colorInput = document.getElementById('color');
-const entryInput = document.getElementById('entryTime');
-const exitInput = document.getElementById('exitTime');
-const calcResult = document.getElementById('calcResult');
-const ticketPreview = document.getElementById('ticketPreview');
-
-function openModal(index){
-  currentIndex = index;
-  const data = spots[index];
-  document.getElementById('modalTitle').innerText = `Vaga ${index+1}`;
-  if(!data){
-    // nova ocupação
-    nameInput.value = '';
-    plateInput.value = '';
-    colorInput.value = '';
-    entryInput.value = formatForDatetimeLocal(new Date());
-    exitInput.value = '';
-    setRadio('clientType','comerciario');
-    setRadio('vehicleType','carro');
-    calcResult.innerText = '';
-    ticketPreview.style.display = 'none';
-  }else{
-    // mostrar dados existentes
-    nameInput.value = data.name || '';
-    plateInput.value = data.plate || '';
-    colorInput.value = data.color || '';
-    entryInput.value = formatForDatetimeLocal(new Date(data.entryTime));
-    exitInput.value = data.exitTime ? formatForDatetimeLocal(new Date(data.exitTime)) : '';
-    setRadio('clientType', data.clientType || 'comerciario');
-    setRadio('vehicleType', data.vehicleType || 'carro');
-    calcResult.innerText = data.lastCalculated ? `R$ ${data.lastCalculated.price.toFixed(2)}` : '';
-    if(data.ticketHtml) {
-      ticketPreview.style.display = 'block';
-      ticketPreview.innerHTML = data.ticketHtml;
-    } else ticketPreview.style.display = 'none';
-  }
-  overlay.classList.add('show');
-}
-function closeModal(){
-  overlay.classList.remove('show');
-}
-
-// ======= Helpers =======
-function getRadio(name){
-  const el = document.querySelector(`input[name="${name}"]:checked`);
-  return el ? el.value : null;
-}
-function setRadio(name,val){
-  const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
-  if(el) el.checked = true;
-}
-function formatForDatetimeLocal(date){
-  const dt = new Date(date);
-  // local ISO slice
-  const off = dt.getTimezoneOffset();
-  const local = new Date(dt.getTime() - off*60000);
-  return local.toISOString().slice(0,16);
-}
-function parseDatetimeLocal(v){
-  if(!v) return null;
-  // input is local datetime like "2025-09-21T11:45"
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? null : d;
-}
-function minutesBetween(a,b){
-  return Math.max(0, Math.round((b.getTime() - a.getTime())/60000));
-}
-
-// ======= Cálculo de tarifa =======
-function calculateTariff(entry, exit, vehicleType, clientType){
-  if(!entry || !exit) return null;
-  const minutes = minutesBetween(entry, exit);
-  const hours = Math.floor(minutes/60);
-  const remainder = minutes % 60;
-  // diária?
-  if(minutes >= DIARY_THRESHOLD_HOURS * 60){
-    const daily = RATES[vehicleType][clientType].daily;
-    return {minutes, type:'diaria', price:daily, breakdown:`Diária aplicada (>= ${DIARY_THRESHOLD_HOURS}h): R$ ${daily.toFixed(2)}`};
-  }
-  // calcular horas cobradas com tolerância de 15min
-  let chargedHours = Math.max(1, hours + (remainder > TOLERANCE_MIN ? 1 : 0));
-  const first = RATES[vehicleType][clientType].first;
-  const additional = RATES[vehicleType][clientType].additional;
-  let price = 0;
-  if(chargedHours === 1) price = first;
-  else price = first + additional * (chargedHours - 1);
-  const breakdown = `Tempo: ${Math.floor(minutes/60)}h ${minutes%60}m → Cobrado: ${chargedHours}h (tolerância ${TOLERANCE_MIN}m). Valor: R$ ${price.toFixed(2)}`;
-  return {minutes, chargedHours, price, breakdown};
-}
-
-// ======= Botões do modal =======
-document.getElementById('btnClose').addEventListener('click',()=>{closeModal();});
-
-document.getElementById('btnOccupy').addEventListener('click',()=>{
-  // salvar/ocupar
-  const name = nameInput.value.trim();
-  const plate = plateInput.value.trim();
-  const color = colorInput.value.trim();
-  const entry = parseDatetimeLocal(entryInput.value) || new Date();
-  const exit = parseDatetimeLocal(exitInput.value);
-  const clientType = getRadio('clientType') || 'comerciario';
-  const vehicleType = getRadio('vehicleType') || 'carro';
-
-  // if spot already occupied, just update data
-  const data = {
-    name, plate, color, entryTime: entry.toISOString(), exitTime: exit ? exit.toISOString() : null,
-    clientType, vehicleType, paid:false, paidAt:null, lastCalculated:null, ticketHtml:null
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyAQetgrWjXeqvY0vqiCWbyBTrtrPK5CsMs",
+    authDomain: "estacionamentogaranhuns.firebaseapp.com",
+    projectId: "estacionamentogaranhuns",
+    storageBucket: "estacionamentogaranhuns.firebasestorage.app",
+    messagingSenderId: "966360238169",
+    appId: "1:966360238169:web:f1610f026b7e269ea74948",
+    measurementId: "G-PZ05G1QLHG"
   };
-  spots[currentIndex] = data;
-  saveSpots();
-  renderGrid();
 
-  // gerar ticket de entrada (conforme pedido: gera ticket quando ocupado e preenchido os dados)
-  const ticketHtml = buildTicketHtml(currentIndex+1, data, null);
-  spots[currentIndex].ticketHtml = ticketHtml;
-  saveSpots();
-  ticketPreview.style.display = 'block';
-  ticketPreview.innerHTML = ticketHtml;
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getFirestore(app);
 
-  // abrir janela de impressão para ticket de entrada
-  openPrintWindow(ticketHtml);
-
-  closeModal();
-});
-
-// marcar saída agora
-document.getElementById('setExitNow').addEventListener('click',()=>{
-  exitInput.value = formatForDatetimeLocal(new Date());
-});
-
-// calcular tarifa
-document.getElementById('calcTariff').addEventListener('click',()=>{
-  const entry = parseDatetimeLocal(entryInput.value) || null;
-  const exit = parseDatetimeLocal(exitInput.value) || new Date();
-  const clientType = getRadio('clientType') || 'comerciario';
-  const vehicleType = getRadio('vehicleType') || 'carro';
-  if(!entry){ alert('Entrada inválida'); return; }
-  const res = calculateTariff(entry, exit, vehicleType, clientType);
-  if(!res) { alert('Não foi possível calcular'); return; }
-  calcResult.innerText = `R$ ${res.price.toFixed(2)}`;
-  // armazenar cálculo temporariamente no preview
-  const previewHtml = `<div><strong>Vaga ${currentIndex+1}</strong></div>
-    <div>${nameInput.value||''} - ${vehicleType} - ${clientType}</div>
-    <div>Entrada: ${entry.toLocaleString()}</div>
-    <div>Saída: ${exit.toLocaleString()}</div>
-    <div style="margin-top:6px;font-weight:700">Valor: R$ ${res.price.toFixed(2)}</div>`;
-  ticketPreview.style.display = 'block';
-  ticketPreview.innerHTML = previewHtml;
-  // keep lastCalculated in memory (but not persisted until they click Pago or Salvar)
-  // show breakdown in tooltip
-  ticketPreview.title = res.breakdown || '';
-});
-
-// Pago
-document.getElementById('btnPago').addEventListener('click',()=>{
-  const spot = spots[currentIndex];
-  if(!spot){ alert('Vaga sem ocupação. Use Salvar para ocupar.'); return; }
-  // ensure exit is set
-  const entry = new Date(spot.entryTime);
-  const exit = parseDatetimeLocal(exitInput.value) || new Date();
-  if(exit < entry) { alert('Saída anterior à entrada'); return; }
-  const res = calculateTariff(entry, exit, spot.vehicleType, spot.clientType);
-  if(!res) { alert('Erro no cálculo'); return; }
-  spot.lastCalculated = res;
-  spot.exitTime = exit.toISOString();
-  spot.paid = true;
-  spot.paidAt = new Date().toISOString();
-  spot.paidExpiresAt = new Date(Date.now() + PAID_GRACE_MIN*60000).toISOString();
-  spot.ticketHtml = buildTicketHtml(currentIndex+1, spot, res);
-  saveSpots();
-  renderGrid();
-  openPrintWindow(spot.ticketHtml);
-  closeModal();
-});
-
-// Liberar vaga - CORREÇÃO APLICADA AQUI
-document.getElementById('btnRelease').addEventListener('click',()=>{
-  if(!confirm('Confirma liberar esta vaga? Todos os dados serão removidos.')) return;
-  
-  // Remove completamente os dados da vaga
-  spots[currentIndex] = null;
-  saveSpots();
-  renderGrid();
-  
-  // Fecha o modal após liberar a vaga
-  closeModal();
-});
-
-// aplicar quantidade de vagas
-document.getElementById('applySpots').addEventListener('click',()=>{
-  const n = parseInt(document.getElementById('numSpots').value,10) || 20;
-  TOTAL_SPOTS = n;
-  spots = loadSpots(TOTAL_SPOTS);
-  // if new size bigger and saved smaller, loadSpots will expand
-  saveSpots();
-  renderGrid();
-});
-
-// limpar todos os dados
-document.getElementById('clearAll').addEventListener('click',()=>{
-  if(!confirm('Limpar todos os dados de vagas (isso não pode ser desfeito)?')) return;
-  spots = Array.from({length:TOTAL_SPOTS},()=>null);
-  saveSpots();
-  renderGrid();
-});
-
-// ======= Util: gerar ticket HTML =======
-function buildTicketHtml(vagaNumber, data, calc){
-  const entry = data.entryTime ? new Date(data.entryTime).toLocaleString() : '-';
-  const exit = data.exitTime ? new Date(data.exitTime).toLocaleString() : (calc && calc.exit ? new Date(calc.exit).toLocaleString() : '-');
-  const valor = (calc && calc.price) ? `R$ ${calc.price.toFixed(2)}` : (data.lastCalculated ? `R$ ${data.lastCalculated.price.toFixed(2)}` : '---');
-  const paidText = data.paid ? 'PAGO' : 'NÃO PAGO';
-  return `<div style="font-family:Arial,Helvetica,sans-serif;width:320px;padding:12px">
-    <div style="text-align:center;font-weight:800;font-size:18px;margin-bottom:8px">VAGA ${vagaNumber}</div>
-    <div style="font-size:13px">Nome: <strong>${escapeHtml(data.name||'')}</strong></div>
-    <div style="font-size:13px">Veículo: <strong>${escapeHtml(data.vehicleType||'')}</strong> - ${escapeHtml(data.plate||'')}</div>
-    <div style="font-size:13px">Cor: ${escapeHtml(data.color||'')}</div>
-    <div style="font-size:13px">Entrada: ${entry}</div>
-    <div style="font-size:13px">Saída: ${exit}</div>
-    <div style="font-size:14px;margin-top:8px;font-weight:700">Valor: ${valor}</div>
-    <div style="font-size:12px;margin-top:6px">Status: ${paidText}</div>
-  </div>`;
-}
-function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// abrir janela para impressão
-function openPrintWindow(html){
-  const w = window.open('','_blank','width=420,height=700');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Ticket</title></head><body>${html}<div style="margin-top:10px"><button onclick="window.print()">Imprimir</button></div></body></html>`);
-  w.document.close();
-}
-
-// ======= Periodic checks para expirar pagamento =======
-function startPeriodicChecks(){
-  if(checkInterval) clearInterval(checkInterval);
-  checkInterval = setInterval(()=>{
-    const now = new Date();
-    let changed = false;
-    for(let i=0;i<spots.length;i++){
-      const s = spots[i];
-      if(!s) continue;
-      if(s.paid && s.paidExpiresAt){
-        const exp = new Date(s.paidExpiresAt);
-        if(now > exp){
-          // expirada a tolerância: volta a ficar ocupada (vermelha)
-          s.paid = false;
-          s.paidAt = null;
-          s.paidExpiresAt = null;
-          changed = true;
-        }
-      }
-    }
-    if(changed){ saveSpots(); renderGrid(); }
-  }, 1000 * 30); // checa a cada 30s
-}
-
-// ======= Outras interações =======
-// quando o usuário clicar fora do modal fecha
-overlay.addEventListener('click',(e)=>{ if(e.target === overlay) closeModal(); });
-
-// impedir submit enter acidental
-overlay.addEventListener('keydown',(e)=>{ if(e.key === 'Enter') e.preventDefault(); });
-
-// salvar automaticamente quando fechar página
-window.addEventListener('beforeunload',()=> saveSpots());
-
-// função utilitária para calcular tarifa ao abrir modal (re-render se houver cálculo salvo)
-function refreshModalCalculated(){
-  const spot = spots[currentIndex];
-  if(spot && spot.lastCalculated){
-    calcResult.innerText = `R$ ${spot.lastCalculated.price.toFixed(2)}`;
-    ticketPreview.style.display = 'block';
-    ticketPreview.innerHTML = spot.ticketHtml || '';
-  }
-}
-
-// quando abrir modal, atualizar preview calculado (se houver)
-overlay.addEventListener('transitionend',()=>{ if(overlay.classList.contains('show')) refreshModalCalculated(); });
-
-// informar ao usuário sobre o comportamento implementado
-console.log('Sistema carregado. Tarifas implementadas: carro/moto, comerciario/usuario, diária (>=9h), tolerância 15 min. Vaga paga fica verde por até 15 min ou até liberar.');
+  // Disponibilize o db globalmente para uso no arquivo javasc.js
+  window.db = db;
+  window.firebaseModules = { doc, setDoc, getDoc, onSnapshot };
 </script>
+<script src="javasc.js"></script>
+
 </body>
 </html>

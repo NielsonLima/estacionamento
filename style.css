@@ -22,13 +22,14 @@
     /* modal */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:40}
     .overlay.show{display:flex}
-    .modal{width:420px;max-width:95%;background:var(--card);padding:16px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.12)}
+    .modal{width:380px;max-width:95%;background:var(--card);padding:16px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.12)}
     .modal h2{margin:0 0 8px 0;font-size:16px}
     .form-row{display:flex;gap:8px;margin-bottom:8px}
     .form-row input[type=text], .form-row input[type=datetime-local], select{flex:1;padding:8px;border-radius:6px;border:1px solid #ccc}
     label{font-size:13px;margin-bottom:4px;display:block}
     .row-full{margin-bottom:8px}
-    .radio-group{display:flex;gap:8px}
+    .radio-group{display:flex;gap:8px;flex-direction:column;margin-top:6px}
+    .radio-group > div {margin-bottom: 6px;}
     .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
     button{padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
     button.ghost{background:transparent;border:1px solid #ccc}
@@ -37,7 +38,48 @@
     .small{font-size:13px}
 
     .ticket-preview{margin-top:8px;padding:10px;background:#fafafa;border-radius:6px;border:1px dashed #ddd;font-size:13px}
+    .time-info{font-size:13px;margin-top:8px;padding:8px;background:#f0f0f0;border-radius:6px;text-align:center}
 
     footer{margin-top:12px;font-size:13px}
 
-    @media (max-width:520px){.modal{width:95%}}
+    .client-vehicle-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .client-vehicle-box {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      background: #f9f9f9;
+    }
+    .client-vehicle-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      text-align: center;
+    }
+    
+    .vehicle-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 8px;
+      background: #f5f5f5;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .vehicle-info span {
+      font-weight: 600;
+    }
+
+    @media (max-width:520px){
+      .modal{width:95%}
+      .client-vehicle-container {
+        grid-template-columns: 1fr;
+      }
+      .vehicle-info {
+        flex-direction: column;
+        gap: 5px;
+      }
+    }
