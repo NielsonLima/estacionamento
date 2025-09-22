@@ -1,3 +1,22 @@
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAQetgrWjXeqvY0vqiCWbyBTrtrPK5CsMs",
+  authDomain: "estacionamentogaranhuns.firebaseapp.com",
+  projectId: "estacionamentogaranhuns",
+  storageBucket: "estacionamentogaranhuns.appspot.com", // corrigido aqui
+  messagingSenderId: "966360238169",
+  appId: "1:966360238169:web:f1610f026b7e269ea74948",
+  measurementId: "G-PZ05G1QLHG"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+
+ 
  // ======= Configurações e tarifas =======
     const RATES = {
       carro: {
@@ -46,7 +65,8 @@
         unsubscribeSpots(); // Remove listener anterior se existir
       }
       
-      const docRef = doc(db, "parking", "spots");
+      const { doc, setDoc, getDoc, onSnapshot } = window.firebaseModules;
+      const docRef = doc(window.db, "parking", "spots");
       
       unsubscribeSpots = onSnapshot(docRef, (doc) => {
         if (doc.exists()) {

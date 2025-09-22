@@ -1,19 +1,27 @@
 <!doctype html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sistema de Estacionamento</title>
-    <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <header>
     <h1>Sistema de Estacionamento</h1>
     <div class="controls">
       <label class="small">Vagas:</label>
-      <input id="numSpots" type="number" value="20" min="1" style="width:80px;padding:6px;border-radius:6px;border:1px solid #ccc">
+      <input id="numSpots" type="number" value="20" min="1"
+        style="width:80px;padding:6px;border-radius:6px;border:1px solid #ccc">
       <button id="applySpots" class="ghost">Aplicar</button>
       <button id="clearAll" class="ghost">Limpar dados</button>
+    </div>
+
+    <div id="syncStatus" class="sync-status offline">
+      <span id="syncDot"></span>
+      <span id="syncText">Offline - aguardando</span>
     </div>
   </header>
 
@@ -31,14 +39,14 @@
           <div>Proprietário: <span id="ownerNameDisplay">-</span></div>
           <div>Veículo: <span id="vehicleTypeDisplay">-</span></div>
         </div>
-        
+
         <div class="form-row">
-            <div style="flex:1">
-                <label>Nome do Proprietário</label>
-                <input id="name" type="text">
-            </div>
+          <div style="flex:1">
+            <label>Nome do Proprietário</label>
+            <input id="name" type="text">
+          </div>
         </div>
-        
+
         <div class="form-row">
           <div style="flex:1">
             <label>Nome do Veículo:</label>
@@ -76,7 +84,7 @@
               <label><input type="radio" name="clientType" value="usuario"> Usuário</label>
             </div>
           </div>
-          
+
           <div class="client-vehicle-box">
             <h3>Tipo de Veículo</h3>
             <div class="radio-group">
@@ -106,35 +114,11 @@
     </div>
   </div>
 
-
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyAQetgrWjXeqvY0vqiCWbyBTrtrPK5CsMs",
-    authDomain: "estacionamentogaranhuns.firebaseapp.com",
-    projectId: "estacionamentogaranhuns",
-    storageBucket: "estacionamentogaranhuns.firebasestorage.app",
-    messagingSenderId: "966360238169",
-    appId: "1:966360238169:web:f1610f026b7e269ea74948",
-    measurementId: "G-PZ05G1QLHG"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const db = getFirestore(app);
-
-  // Disponibilize o db globalmente para uso no arquivo javasc.js
-  window.db = db;
-  window.firebaseModules = { doc, setDoc, getDoc, onSnapshot };
-</script>
+<script type="module" src="javasc.js"></script>
 <script src="javasc.js"></script>
 
+  
+
 </body>
+
 </html>

@@ -83,3 +83,29 @@
         gap: 5px;
       }
     }
+
+    .sync-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin-left: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f0f0f0;
+}
+.sync-status.online {
+  background: #e6f7ed;
+  color: #2ecc71;
+}
+.sync-status.offline {
+  background: #fdecea;
+  color: #e74c3c;
+}
+#syncDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
