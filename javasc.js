@@ -1,12 +1,14 @@
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+// ======= IMPORTS DO FIREBASE =======
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
+// ======= CONFIGURAÇÃO DO FIREBASE =======
 const firebaseConfig = {
   apiKey: "AIzaSyAQetgrWjXeqvY0vqiCWbyBTrtrPK5CsMs",
   authDomain: "estacionamentogaranhuns.firebaseapp.com",
   projectId: "estacionamentogaranhuns",
-  storageBucket: "estacionamentogaranhuns.appspot.com", // corrigido aqui
+  storageBucket: "estacionamentogaranhuns.appspot.com", // corrigido
   messagingSenderId: "966360238169",
   appId: "1:966360238169:web:f1610f026b7e269ea74948",
   measurementId: "G-PZ05G1QLHG"
@@ -65,8 +67,8 @@ const db = getFirestore(app);
         unsubscribeSpots(); // Remove listener anterior se existir
       }
       
-      const { doc, setDoc, getDoc, onSnapshot } = window.firebaseModules;
-      const docRef = doc(window.db, "parking", "spots");
+      const docRef = doc(db, "parking", "spots");
+await setDoc(docRef, { spots: spots, lastUpdated: new Date() });
       
       unsubscribeSpots = onSnapshot(docRef, (doc) => {
         if (doc.exists()) {
@@ -615,4 +617,5 @@ const db = getFirestore(app);
     });
 
     // informar ao usuário sobre o comportamento implementado
+
     console.log('Sistema carregado. Tarifas implementadas: carro/moto, comerciario/usuario, diária (>=9h), tolerância 15 min. Vaga paga fica verde por até 15 min ou até liberar.');
