@@ -585,14 +585,16 @@ input, select {
         margin-top: 10px;
     }
 
-}
-
-.form-row {
+    .form-row {
     display: block;
 }
 
 .form-row .form-group,
     .form-row .display-info {
-        width: 100%;         /* cada campo ocupa toda a linha */
-        margin-bottom: 15px; /* espaço entre os campos */
+        width: 100%;         
+          margin-bottom: 15px;
     }
+}
+
+
+      
