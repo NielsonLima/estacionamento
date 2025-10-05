@@ -584,4 +584,15 @@ input, select {
         margin-left: 0;
         margin-top: 10px;
     }
+
 }
+
+.form-row {
+    display: block;
+}
+
+.form-row .form-group,
+    .form-row .display-info {
+        width: 100%;         /* cada campo ocupa toda a linha */
+        margin-bottom: 15px; /* espaço entre os campos */
+    }
