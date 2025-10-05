@@ -4,136 +4,197 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <title>Sistema de Estacionamento</title>
-
+    <title>Sistema de Estacionamento - Login</title>
 </head>
 <body>
-    <header>
-        <h1>
-            Sistema de Estacionamento
-            <span id="syncStatus" class="status-dot offline"></span>
-        </h1>
-        <div class="status">
-            <span id="syncText">Conectando ao Firebase...</span>
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Estacionamento Multi</h1>
+                <p>Sistema de Gestão Multi-Estabelecimento</p>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginEmail">E-mail:</label>
+                    <input type="email" id="loginEmail" placeholder="seu@email.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Senha:</label>
+                    <input type="password" id="loginPassword" placeholder="Sua senha" required>
+                </div>
+                
+                <button type="submit" id="btnLogin" class="login-btn">Entrar</button>
+                
+                <div class="login-links">
+                    <a href="#" id="forgotPassword">Esqueci minha senha</a>
+                </div>
+            </form>
+
+            <div id="loginError" class="error-message" style="display: none;"></div>
         </div>
-    </header>
-
-    <div id="errorPanel" class="error-panel" style="display: none;">
-        <h3>Erro de Conexão com Firebase</h3>
-        <p>Verifique se você está online e se as configurações do Firebase estão corretas.</p>
     </div>
 
-    <div class="config-panel">
-        <h2>Configurações</h2>
-        <div style="margin-top: 15px;">
-            <label for="numSpots">Número de Vagas:</label>
-            <input type="number" id="numSpots" value="20" min="1" max="100">
-            <button id="applySpots">Aplicar</button>
-            <button id="clearAll" class="danger">Limpar Tudo</button>
-        </div>
-    </div>
-
-    <div id="loading" class="loading">Carregando vagas...</div>
-
-    <div class="grid" id="grid">
-        <!-- Vagas serão renderizadas aqui pelo JavaScript -->
-    </div>
-
-    <div class="overlay" id="overlay">
+    <!-- Modal de Seleção de Estabelecimento -->
+    <div id="establishmentModal" class="modal-establishment">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">Vaga</h2>
-                <button class="close-btn" id="btnClose">&times;</button>
+                <h2 class="modal-title">Selecionar Estabelecimento</h2>
             </div>
             
-            <div class="display-info">
-                <div class="display-label">Proprietário</div>
-                <div class="display-value" id="ownerNameDisplay">-</div>
+            <div class="establishment-info">
+                <p>Usuário: <span id="currentUserEmail">-</span></p>
+                <p id="establishmentHelp" style="font-size: 0.9rem; margin-top: 5px; color: #666;">
+                    Carregando estabelecimentos...
+                </p>
             </div>
-            
-            <div class="display-info">
-                <div class="display-label">Tipo de Veículo</div>
-                <div class="display-value" id="vehicleTypeDisplay">-</div>
-            </div>
-            
+
             <div class="form-group">
-                <label for="name">Nome do Proprietário:</label>
-                <input type="text" id="name" placeholder="Digite o nome">
+                <label for="establishmentSelect">Escolha um estabelecimento:</label>
+                <select id="establishmentSelect" class="form-control">
+                    <option value="">Carregando estabelecimentos...</option>
+                </select>
             </div>
-            
-            <div class="form-group">
-                <label for="vehicleName">Nome do Veículo:</label>
-                <input type="text" id="vehicleName" placeholder="Digite o nome do veículo">
-            </div>
-            
-            <div class="form-group">
-                <label for="plate">Placa:</label>
-                <input type="text" id="plate" placeholder="Digite a placa">
-            </div>
-            
-            <div class="form-group">
-                <label for="color">Cor:</label>
-                <input type="text" id="color" placeholder="Digite a cor">
-            </div>
-            
-            <div class="form-group">
-                <label for="entryTime">Data/Hora de Entrada:</label>
-                <input type="datetime-local" id="entryTime">
-            </div>
-            
-            <div class="form-group">
-                <label for="exitTime">Data/Hora de Saída:</label>
-                <input type="datetime-local" id="exitTime">
-                <button id="setExitNow" style="margin-top: 10px;">Definir Saída Agora</button>
-            </div>
-            
-            <div class="radio-group">
-                <label>Tipo de Cliente:</label>
-                <div class="radio-option">
-                    <input type="radio" id="clientComerciario" name="clientType" value="comerciario" checked>
-                    <label for="clientComerciario">Comerciário</label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" id="clientUsuario" name="clientType" value="usuario">
-                    <label for="clientUsuario">Usuário</label>
-                </div>
-            </div>
-            
-            <div class="radio-group">
-                <label>Tipo de Veículo:</label>
-                <div class="radio-option">
-                    <input type="radio" id="vehicleCar" name="vehicleType" value="carro" checked>
-                    <label for="vehicleCar">Carro</label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" id="vehicleMoto" name="vehicleType" value="moto">
-                    <label for="vehicleMoto">Moto</label>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <button id="calcTariff">Calcular Tarifa</button>
-                <div id="timeInfo" style="margin-top: 10px; font-style: italic;"></div>
-                <div id="calcResult" style="margin-top: 10px; font-weight: bold; font-size: 1.2rem;"></div>
-            </div>
-            
+
             <div class="modal-footer">
-                <button id="btnOccupy">Salvar/Ocupar</button>
-                <button id="btnPago">Marcar como Pago</button>
-                <button id="btnRelease" class="danger">Liberar Vaga</button>
+                <button id="btnSelectEstablishment" class="login-btn">Entrar no Estabelecimento</button>
             </div>
-            
-            <div class="ticket-preview" id="ticketPreview" style="display: none;"></div>
+
+            <div class="login-links" style="margin-top: 20px; text-align: center;">
+                <a href="#" id="btnLogoutEstablishment">Sair da Conta</a>
+            </div>
         </div>
     </div>
 
-    <!-- Firebase App (o núcleo do Firebase) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <!-- Firebase Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <!-- Firebase Analytics -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
-    <script src="javasc.js"></script>
+    <!-- Sistema Principal (inicialmente oculto) -->
+    <div id="mainSystem" style="display: none;">
+        <header>
+            <h1>
+                <span id="establishmentName">Sistema de Estacionamento</span>
+                <span id="syncStatus" class="status-dot offline"></span>
+                <button id="btnLogout" class="logout-btn">Sair</button>
+            </h1>
+            <div class="status">
+                <span id="syncText">Conectando ao Firebase...</span>
+                <span id="userInfo" style="margin-left: auto;"></span>
+                <button id="btnSwitchEstablishment" class="switch-establishment">Trocar Estabelecimento</button>
+            </div>
+        </header>
 
+        <div id="errorPanel" class="error-panel" style="display: none;">
+            <h3>Erro de Conexão com Firebase</h3>
+            <p>Verifique se você está online e se as configurações do Firebase estão corretas.</p>
+        </div>
+
+        <div class="config-panel">
+            <h2>Configurações do Estabelecimento</h2>
+            <div style="margin-top: 15px;">
+                <label for="numSpots">Número de Vagas:</label>
+                <input type="number" id="numSpots" value="20" min="1" max="100">
+                <button id="applySpots">Aplicar</button>
+                <button id="clearAll" class="danger">Limpar Todas as Vagas</button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">Carregando vagas...</div>
+
+        <div class="grid" id="grid">
+            <!-- Vagas serão renderizadas aqui pelo JavaScript -->
+        </div>
+
+        <div class="overlay" id="overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="modalTitle">Vaga</h2>
+                    <button class="close-btn" id="btnClose">&times;</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Nome do Proprietário:</label>
+                        <input type="text" id="name" placeholder="Digite o nome">
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="vehicleName">Nome do Veículo:</label>
+                        <input type="text" id="vehicleName" placeholder="Digite o nome do veículo">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="plate">Placa:</label>
+                        <input type="text" id="plate" placeholder="Digite a placa">
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="color">Cor:</label>
+                        <input type="text" id="color" placeholder="Digite a cor">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="entryTime">Data/Hora de Entrada:</label>
+                        <input type="datetime-local" id="entryTime">
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="exitTime">Data/Hora de Saída:</label>
+                        <input type="datetime-local" id="exitTime">
+                    </div>
+                </div>
+                <div class="button-exit-now">
+                    <button id="setExitNow" style="margin-top: 10px;">Definir Saída Agora</button>
+                </div>
+                <div class="form-row">
+                    <div class="radio-group">
+                        <label>Tipo de Cliente:</label>
+                        <div class="radio-option">
+                            <input type="radio" id="clientComerciario" name="clientType" value="comerciario" checked>
+                            <label for="clientComerciario">Comerciário</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="clientUsuario" name="clientType" value="usuario">
+                            <label for="clientUsuario">Usuário</label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                <div class="radio-group">
+                    <label>Tipo de Veículo:</label>
+                    <div class="radio-option">
+                        <input type="radio" id="vehicleCar" name="vehicleType" value="carro" checked>
+                        <label for="vehicleCar">Carro</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="vehicleMoto" name="vehicleType" value="moto">
+                        <label for="vehicleMoto">Moto</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button id="calcTariff">Calcular Tarifa</button>
+                    <div id="timeInfo" style="margin-top: 10px; font-style: italic;"></div>
+                    <div id="calcResult" style="margin-top: 10px; font-weight: bold; font-size: 1.2rem;"></div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button id="btnOccupy">Salvar/Ocupar</button>
+                    <button id="btnPago">Marcar como Pago</button>
+                    <button id="btnRelease" class="danger">Liberar Vaga</button>
+                </div>
+                
+                <div class="ticket-preview" id="ticketPreview" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    
+    <script src="javasc.js"></script>
 </body>
 </html>
